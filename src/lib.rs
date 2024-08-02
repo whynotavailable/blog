@@ -1,16 +1,15 @@
-use std::{borrow::Borrow, collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use axum::{
     extract::State,
     http::{StatusCode, Uri},
     response::Html,
     routing::get,
-    Extension, Router,
+    Router,
 };
 use handlebars::{DirectorySourceOptions, Handlebars};
 use models::{AppState, RouteConfig};
 use serde_json::json;
-use tower::ServiceBuilder;
 
 pub mod models;
 
