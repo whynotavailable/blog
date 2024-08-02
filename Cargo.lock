@@ -154,6 +154,8 @@ dependencies = [
  "axum",
  "criterion",
  "handlebars",
+ "serde",
+ "serde_json",
  "tokio",
  "tower",
 ]
@@ -428,6 +430,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "walkdir",
 ]
 
 [[package]]

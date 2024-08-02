@@ -1,24 +1,10 @@
-use axum::{http::Uri, response::Html, routing::get, Router};
-
-async fn handler(uri: Uri) -> Html<String> {
-    Html(uri.to_string())
-}
-
 #[tokio::main]
 async fn main() {
-    println!("hi");
-    let app = Router::new()
-        .route("/", get(handler))
-        .route("/*e", get(handler));
-
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    blog::actual_main().await;
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use blog::match_route;
 
     fn test_route_match(route: &str, format: &str) {
