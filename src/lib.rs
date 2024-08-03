@@ -8,8 +8,9 @@ use axum::{
 };
 use config::{Config, Environment, File as CF, FileFormat};
 use handlebars::{DirectorySourceOptions, Handlebars};
-use libsql::{de, Builder};
+use libsql::{de, Builder, Connection};
 use models::{AppState, PageContent, PageData, RouteConfig};
+use serde::de::DeserializeOwned;
 use serde_json::json;
 
 use tower_http::services::ServeDir;
@@ -34,6 +35,36 @@ async fn handler(State(state): State<Arc<AppState>>, uri: Uri) -> Result<Html<St
     Err(StatusCode::NOT_FOUND)
 }
 
+pub async fn get_one<T: DeserializeOwned>(
+    conn: Connection,
+    sql: &str,
+    params: impl libsql::params::IntoParams,
+) -> anyhow::Result<T> {
+    let row = conn
+        .query(sql, params)
+        .await?
+        .next()
+        .await?
+        .ok_or(anyhow::anyhow!("Failed to get row"))?;
+
+    de::from_row::<T>(&row).map_err(anyhow::Error::new)
+}
+
+pub async fn get_list<T: DeserializeOwned>(
+    conn: Connection,
+    sql: &str,
+    params: impl libsql::params::IntoParams,
+) -> anyhow::Result<Vec<T>> {
+    let mut iter = conn.query(sql, params).await?;
+    let mut ret: Vec<T> = Vec::new();
+
+    while let Some(page) = iter.next().await? {
+        ret.push(de::from_row::<T>(&page)?);
+    }
+
+    Ok(ret)
+}
+
 pub async fn handle_page(
     state: Arc<AppState>,
     route: RouteConfig,
@@ -44,19 +75,16 @@ pub async fn handle_page(
         .connect()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let page = conn
-        .query("SELECT * FROM page WHERE id = ?1", [route.page_id])
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .next()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .ok_or(StatusCode::NOT_FOUND)?;
-
-    let page = de::from_row::<PageData>(&page).unwrap();
+    let content: PageData = get_one(
+        conn,
+        "SELECT * FROM page WHERE id = ?1",
+        [route.page_id.clone()],
+    )
+    .await
+    .map_err(|_| StatusCode::NOT_FOUND)?;
 
     let some_content = PageContent {
-        content: page.content,
+        content: content.content,
     };
 
     let html = state
