@@ -1,8 +1,6 @@
-CREATE TABLE post (
-  id, content
+CREATE TABLE page (
+  id PRIMARY KEY,
+  excerpt,
+  content
 );
-
-INSERT INTO post (
-  id, content
-) VALUES ( 'one', 'two' );
 
