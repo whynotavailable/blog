@@ -3,8 +3,7 @@ use std::{collections::HashMap, fs::File, io::BufReader, path::Path, sync::Arc};
 use axum::{
     extract::State,
     http::{StatusCode, Uri},
-    response::{Html, IntoResponse},
-    routing::get,
+    response::Html,
     Router,
 };
 use handlebars::{DirectorySourceOptions, Handlebars};
