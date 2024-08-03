@@ -65,8 +65,7 @@ pub async fn actual_main(root: String) {
 
     let app = Router::new()
         .nest_service("/assets", ServeDir::new(root.join("assets")))
-        .route("/", get(handler))
-        .route("/*e", get(handler));
+        .fallback(handler);
 
     //let app = app.layer(ServiceBuilder::new().layer(Extension(state)));
     let app = app.with_state(Arc::new(state));
