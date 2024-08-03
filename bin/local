@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -e
+
+RUST_BACKTRACE=1 cargo run -- ../my-site

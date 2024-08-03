@@ -1,15 +1,17 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, fs::File, io::BufReader, path::Path, sync::Arc};
 
 use axum::{
     extract::State,
     http::{StatusCode, Uri},
-    response::Html,
+    response::{Html, IntoResponse},
     routing::get,
     Router,
 };
 use handlebars::{DirectorySourceOptions, Handlebars};
 use models::{AppState, RouteConfig};
 use serde_json::json;
+
+use tower_http::services::ServeDir;
 
 pub mod models;
 
@@ -32,25 +34,37 @@ async fn handler(State(state): State<Arc<AppState>>, uri: Uri) -> Result<Html<St
     Err(StatusCode::NOT_FOUND)
 }
 
-pub async fn actual_main() {
+pub async fn actual_main(root: String) {
     let mut handlebars = Handlebars::new();
 
-    let result =
-        handlebars.register_templates_directory("templates/", DirectorySourceOptions::default());
+    let root = Path::new(root.as_str());
+
+    let result = handlebars
+        .register_templates_directory(root.join("templates"), DirectorySourceOptions::default());
 
     result.unwrap();
 
-    let mut routes: Vec<RouteConfig> = Vec::new();
+    let routes_path = root.join("routes.json");
 
-    routes.push(RouteConfig {
-        path: "".to_string(),
-        template: "base".to_string(),
-        route_type: models::RouteType::Page,
-    });
+    let routes_file = File::open(&routes_path);
+
+    if routes_file.is_err() {
+        println!(
+            "Paths File At {} Not Found!",
+            routes_path.to_str().unwrap_or("wot")
+        );
+        return;
+    }
+
+    let reader = BufReader::new(routes_file.unwrap());
+
+    let routes: Vec<RouteConfig> =
+        serde_json::from_reader(reader).expect("Failed To Load Routes File!");
 
     let state = AppState { handlebars, routes };
 
     let app = Router::new()
+        .nest_service("/assets", ServeDir::new(root.join("assets")))
         .route("/", get(handler))
         .route("/*e", get(handler));
 
@@ -58,6 +72,8 @@ pub async fn actual_main() {
     let app = app.with_state(Arc::new(state));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+
+    println!("WHAT LET FOOL");
     axum::serve(listener, app).await.unwrap();
 }
 

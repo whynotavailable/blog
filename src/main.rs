@@ -1,6 +1,8 @@
 #[tokio::main]
 async fn main() {
-    blog::actual_main().await;
+    let root = std::env::args().nth(1).unwrap_or("./".to_string());
+
+    blog::actual_main(root).await;
 }
 
 #[cfg(test)]
