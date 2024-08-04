@@ -1,6 +1,7 @@
 [package]
 name = "blog"
 version = "0.1.0"
+description = "A semi-simple blog system using turso."
 edition = "2021"
 default-run = "blog"
 license = "CC0-1.0"
