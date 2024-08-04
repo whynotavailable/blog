@@ -1,9 +1,9 @@
 [package]
-name = "blog"
+name = "whynotblog"
 version = "0.1.0"
 description = "A semi-simple blog system using turso."
 edition = "2021"
-default-run = "blog"
+default-run = "whynotblog"
 license = "CC0-1.0"
 readme = "README.md"
 repository = "https://github.com/whynotavailable/blog"
@@ -27,10 +27,10 @@ tower-http = { version = "0.5.2", features = ["fs"] }
 criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [[bin]]
-name = "blog"
+name = "whynotblog"
 
 [[bin]]
-name = "cli"
+name = "whynotblog-cli"
 
 [[bench]]
 name = "my_benchmark"

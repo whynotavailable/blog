@@ -2,12 +2,12 @@
 async fn main() -> anyhow::Result<()> {
     let root = std::env::args().nth(1).unwrap_or("./".to_string());
 
-    blog::actual_main(root).await
+    whynotblog::actual_main(root).await
 }
 
 #[cfg(test)]
 mod tests {
-    use blog::match_route;
+    use whynotblog::match_route;
 
     fn test_route_match(route: &str, format: &str) {
         let m = match_route(route, format);

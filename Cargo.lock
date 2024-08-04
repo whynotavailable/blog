@@ -348,25 +348,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "blog"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum 0.7.5",
- "clap",
- "config",
- "criterion",
- "handlebars",
- "libsql",
- "pulldown-cmark",
- "serde",
- "serde_json",
- "tokio",
- "tower",
- "tower-http 0.5.2",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2705,6 +2686,25 @@ dependencies = [
  "home",
  "once_cell",
  "rustix",
+]
+
+[[package]]
+name = "whynotblog"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum 0.7.5",
+ "clap",
+ "config",
+ "criterion",
+ "handlebars",
+ "libsql",
+ "pulldown-cmark",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower",
+ "tower-http 0.5.2",
 ]
 
 [[package]]
