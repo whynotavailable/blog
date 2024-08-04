@@ -102,11 +102,14 @@ pub async fn actual_main(root: String) -> anyhow::Result<()> {
     let root = Path::new(root.as_str());
 
     let builder = Config::builder()
-        .add_source(Environment::default())
-        .add_source(CF::new(
-            root.join(".settings.json").to_str().unwrap(),
-            FileFormat::Json,
-        ));
+        .add_source(
+            CF::new(
+                root.join(".settings.json").to_str().unwrap(),
+                FileFormat::Json,
+            )
+            .required(false),
+        )
+        .add_source(Environment::default());
 
     let config = builder.build()?;
 
