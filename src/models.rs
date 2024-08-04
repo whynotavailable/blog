@@ -35,6 +35,5 @@ pub struct PageContent {
 #[derive(Deserialize, Debug)]
 pub struct PageData {
     pub id: String,
-    pub experpt: Option<String>,
     pub content: String,
 }

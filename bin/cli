@@ -2,4 +2,6 @@
 
 set -e
 
-RUST_BACKTRACE=1 cargo run --bin cli -- ../my-site
+#echo $@
+
+RUST_BACKTRACE=1 cargo run --bin cli -- --root ../my-site $@

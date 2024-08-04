@@ -1,61 +1,42 @@
-use std::path::Path;
+use std::{fs, path::Path};
 
-use blog::models::PageData;
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+#[command(propagate_version = true)]
+struct Cli {
+    /// Content root
+    #[arg(short, long)]
+    root: Option<String>,
+
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Publishes page
+    Page { name: String },
+}
+
 use config::{Config, Environment, File, FileFormat};
-use libsql::{de, Builder};
+use libsql::Builder;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     publish().await
 }
 
-async fn _scratch() -> anyhow::Result<()> {
-    let root = std::env::args().nth(1).unwrap_or("./".to_string());
-    let root_path = Path::new(root.as_str());
-
-    let builder = Config::builder()
-        .add_source(Environment::default())
-        .add_source(File::new(
-            root_path.join(".settings.json").to_str().unwrap(),
-            FileFormat::Json,
-        ));
-
-    let config = builder.build()?;
-
-    let libsql_url = config.get_string("libsql_url")?;
-    let libsql_token = config.get_string("libsql_token")?;
-
-    let db = Builder::new_remote(libsql_url, libsql_token)
-        .build()
-        .await?;
-
-    let conn = db.connect().unwrap();
-
-    let mut pages = conn.query("SELECT * FROM page", ()).await?;
-
-    while let Some(page) = pages.next().await? {
-        let page = de::from_row::<PageData>(&page).unwrap();
-
-        println!("{} {}", page.id, page.content);
-    }
-
-    Ok(())
-}
-
 async fn publish() -> anyhow::Result<()> {
-    let sql = "INSERT OR REPLACE INTO page (id, excerpt, content) 
-  VALUES (?1, ?2, ?3);";
-
-    let page = "home";
-    let content = "<h1>Hello, World!</h1>";
-
-    let root = std::env::args().nth(1).unwrap_or("./".to_string());
-    let root_path = Path::new(root.as_str());
+    let cli = Cli::parse();
+    let root = cli.root.unwrap_or("./".to_string());
+    let root = Path::new(root.as_str());
 
     let builder = Config::builder()
         .add_source(Environment::default())
         .add_source(File::new(
-            root_path.join(".settings.json").to_str().unwrap(),
+            root.join(".settings.json").to_str().unwrap(),
             FileFormat::Json,
         ));
 
@@ -64,12 +45,29 @@ async fn publish() -> anyhow::Result<()> {
     let libsql_url = config.get_string("libsql_url")?;
     let libsql_token = config.get_string("libsql_token")?;
 
-    let db = Builder::new_remote(libsql_url, libsql_token)
-        .build()
-        .await?;
+    match &cli.command {
+        Commands::Page { name } => {
+            let sql = "INSERT OR REPLACE INTO page (id, content) VALUES (?1, ?2);";
 
-    let conn = db.connect().unwrap();
-    conn.execute(sql, [page, "", content]).await?;
+            let path = format!("pages/{}.md", name);
+            let path = root.join(path);
+
+            let content = fs::read_to_string(path)?;
+
+            let parser = pulldown_cmark::Parser::new(content.as_str());
+
+            // Write to a new String buffer.
+            let mut html_output = String::new();
+            pulldown_cmark::html::push_html(&mut html_output, parser);
+
+            let db = Builder::new_remote(libsql_url, libsql_token)
+                .build()
+                .await?;
+
+            let conn = db.connect().unwrap();
+            conn.execute(sql, [name, html_output.as_str()]).await?;
+        }
+    }
 
     Ok(())
 }
