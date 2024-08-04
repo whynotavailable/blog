@@ -95,11 +95,12 @@ pub async fn handle_page(
     Ok(Html(html))
 }
 
-pub async fn actual_main(root: String) -> anyhow::Result<()> {
+pub async fn actual_main(root: &Path, dev: bool) -> anyhow::Result<()> {
     let mut handlebars = Handlebars::new();
-    handlebars.set_dev_mode(true);
 
-    let root = Path::new(root.as_str());
+    if dev {
+        handlebars.set_dev_mode(true);
+    }
 
     let builder = Config::builder()
         .add_source(
