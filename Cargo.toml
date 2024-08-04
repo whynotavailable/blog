@@ -6,6 +6,7 @@ default-run = "blog"
 license = "CC0-1.0"
 readme = "README.md"
 repository = "https://github.com/whynotavailable/blog"
+exclude = ["sql/*"]
 
 [dependencies]
 anyhow = "1.0.86"
