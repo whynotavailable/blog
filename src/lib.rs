@@ -1,8 +1,8 @@
-use std::{fs::File, io::BufReader, path::Path, sync::Arc};
+use std::{path::Path, sync::Arc};
 
 use axum::{
     extract::{self, Query, State},
-    http::{StatusCode, Uri},
+    http::StatusCode,
     response::Html,
     routing::get,
     Router,
@@ -10,7 +10,7 @@ use axum::{
 use config::{Config, Environment, File as CF, FileFormat};
 use handlebars::{DirectorySourceOptions, Handlebars};
 use libsql::{de, Builder, Connection};
-use models::{AppState, PageContent, PageData, PostContent, PostData, RouteConfig, SearchParams};
+use models::{AppState, PageContent, PageData, PostContent, PostData, SearchParams};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 
