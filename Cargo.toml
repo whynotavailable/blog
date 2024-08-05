@@ -1,6 +1,6 @@
 [package]
 name = "whynotblog"
-version = "0.1.2"
+version = "0.1.3"
 description = "A semi-simple blog system using turso."
 edition = "2021"
 default-run = "whynotblog"
@@ -31,7 +31,3 @@ name = "whynotblog"
 
 [[bin]]
 name = "whynotblog-cli"
-
-[[bench]]
-name = "my_benchmark"
-harness = false

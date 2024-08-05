@@ -1,39 +1,22 @@
-use std::{collections::HashMap, fs::File, io::BufReader, path::Path, sync::Arc};
+use std::{fs::File, io::BufReader, path::Path, sync::Arc};
 
 use axum::{
-    extract::State,
+    extract::{self, Query, State},
     http::{StatusCode, Uri},
     response::Html,
+    routing::get,
     Router,
 };
 use config::{Config, Environment, File as CF, FileFormat};
 use handlebars::{DirectorySourceOptions, Handlebars};
 use libsql::{de, Builder, Connection};
-use models::{AppState, PageContent, PageData, RouteConfig};
+use models::{AppState, PageContent, PageData, PostContent, PostData, RouteConfig, SearchParams};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 
 use tower_http::services::ServeDir;
 
 pub mod models;
-
-async fn handler(State(state): State<Arc<AppState>>, uri: Uri) -> Result<Html<String>, StatusCode> {
-    let routes: Vec<RouteConfig> = state.routes.clone();
-
-    for route in routes {
-        let route_path = route.path.clone();
-        let route_data = match_route(uri.path(), route_path.as_str());
-
-        if let Some(route_data) = route_data {
-            return match route.route_type {
-                models::RouteType::Page => handle_page(state, route, route_data).await,
-                models::RouteType::Post => Err(StatusCode::NOT_FOUND),
-            };
-        }
-    }
-
-    Err(StatusCode::NOT_FOUND)
-}
 
 pub async fn get_one<T: DeserializeOwned>(
     conn: Connection,
@@ -66,22 +49,17 @@ pub async fn get_list<T: DeserializeOwned>(
 }
 
 pub async fn handle_page(
-    state: Arc<AppState>,
-    route: RouteConfig,
-    _route_data: HashMap<&str, &str>,
+    State(state): State<Arc<AppState>>,
+    extract::Path(id): extract::Path<String>,
 ) -> Result<Html<String>, StatusCode> {
     let conn = state
         .db
         .connect()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let content: PageData = get_one(
-        conn,
-        "SELECT * FROM page WHERE id = ?1",
-        [route.page_id.clone()],
-    )
-    .await
-    .map_err(|_| StatusCode::NOT_FOUND)?;
+    let content: PageData = get_one(conn, "SELECT * FROM page WHERE id = ?1", [id])
+        .await
+        .map_err(|_| StatusCode::NOT_FOUND)?;
 
     let some_content = PageContent {
         content: content.content,
@@ -89,7 +67,64 @@ pub async fn handle_page(
 
     let html = state
         .handlebars
-        .render(&route.template, &json!(some_content))
+        .render("page", &json!(some_content))
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Html(html))
+}
+
+pub async fn handle_post(
+    State(state): State<Arc<AppState>>,
+    extract::Path(slug): extract::Path<String>,
+) -> Result<Html<String>, StatusCode> {
+    let conn = state
+        .db
+        .connect()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let content: PostData = get_one(conn, "SELECT * FROM post WHERE slug = ?1", [slug])
+        .await
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    let html = state
+        .handlebars
+        .render("post", &json!(content))
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Html(html))
+}
+
+pub async fn search(
+    State(state): State<Arc<AppState>>,
+    search_params: Query<SearchParams>,
+) -> Result<Html<String>, StatusCode> {
+    let conn = state
+        .db
+        .connect()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let posts: Vec<PostData> = match search_params.tag.clone() {
+        Some(tag) => {
+            let sql = "SELECT * FROM post WHERE tag = ?1 ORDER BY timestamp DESC";
+
+            get_list(conn, sql, libsql::params![tag.as_str()])
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        }
+        None => {
+            let sql = "SELECT * FROM post ORDER BY timestamp DESC";
+
+            get_list(conn, sql, ())
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        }
+    };
+
+    let content = PostContent { posts };
+
+    let html = state
+        .handlebars
+        .render("search", &json!(content))
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Html(html))
@@ -126,24 +161,17 @@ pub async fn actual_main(root: &Path, dev: bool) -> anyhow::Result<()> {
 
     result.unwrap();
 
-    let routes_path = root.join("routes.json");
-
-    let routes_file = File::open(&routes_path)?;
-
-    let reader = BufReader::new(routes_file);
-
-    let routes: Vec<RouteConfig> =
-        serde_json::from_reader(reader).expect("Failed To Load Routes File!");
-
     let state = AppState {
         handlebars,
-        routes,
         db: Arc::new(db),
     };
 
     let app = Router::new()
-        .nest_service("/assets", ServeDir::new(root.join("assets")))
-        .fallback(handler);
+        .route("/", get(search))
+        .route("/page/:id", get(handle_page))
+        .route("/post/:slug", get(handle_post))
+        .nest_service("/assets", ServeDir::new(root.join("assets")));
+    //.fallback(handler);
 
     //let app = app.layer(ServiceBuilder::new().layer(Extension(state)));
     let app = app.with_state(Arc::new(state));
@@ -154,32 +182,4 @@ pub async fn actual_main(root: &Path, dev: bool) -> anyhow::Result<()> {
     axum::serve(listener, app).await.unwrap();
 
     Ok(())
-}
-
-pub fn match_route<'a>(route: &'a str, format: &'a str) -> Option<HashMap<&'a str, &'a str>> {
-    let mut param_map: HashMap<&str, &str> = HashMap::new();
-
-    let route_parts: Vec<&str> = route.trim_start_matches("/").split("/").collect();
-    let format_parts: Vec<&str> = format.trim_start_matches("/").split("/").collect();
-
-    if route_parts.len() != format_parts.len() {
-        return None;
-    }
-
-    let my_range = 0..route_parts.len();
-
-    for i in my_range {
-        let route_part = route_parts[i];
-        let format_part = format_parts[i];
-
-        if format_part.starts_with(":") {
-            // do
-            let key = format_part.trim_start_matches(":");
-            param_map.insert(key, route_part);
-        } else if !route_part.eq(format_part) {
-            return None;
-        }
-    }
-
-    Some(param_map)
 }

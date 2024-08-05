@@ -9,7 +9,6 @@ pub struct RenderData {}
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub handlebars: handlebars::Handlebars<'static>,
-    pub routes: Vec<RouteConfig>,
     pub db: Arc<Database>,
 }
 
@@ -32,8 +31,35 @@ pub struct PageContent {
     pub content: String,
 }
 
+#[derive(Serialize, Debug)]
+pub struct PostContent {
+    pub posts: Vec<PostData>,
+}
+
 #[derive(Deserialize, Debug)]
 pub struct PageData {
     pub id: String,
+    pub content: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PostConfig {
+    pub timestamp: Option<u64>,
+    pub title: String,
+    pub tag: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SearchParams {
+    pub tag: Option<String>,
+    pub page: Option<usize>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PostData {
+    pub slug: String,
+    pub timestamp: usize,
+    pub title: String,
+    pub tag: String,
     pub content: String,
 }

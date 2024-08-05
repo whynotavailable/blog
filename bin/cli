@@ -4,4 +4,4 @@ set -e
 
 #echo $@
 
-RUST_BACKTRACE=1 cargo run --bin cli -- --root ../my-site $@
+RUST_BACKTRACE=1 cargo run --bin whynotblog-cli -- --root ../my-site $@
