@@ -5,10 +5,10 @@ CREATE TABLE page (
 
 CREATE TABLE post (
   slug PRIMARY KEY,
-  post_number INTEGER,
+  timestamp INTEGER,
   title,
   tag,
   content
 );
 
-CREATE UNIQUE INDEX idx_post_ts ON post(post_number DESC);
+CREATE UNIQUE INDEX idx_post_ts ON post(timestamp DESC);
