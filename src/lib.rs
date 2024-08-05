@@ -48,6 +48,27 @@ pub async fn get_list<T: DeserializeOwned>(
     Ok(ret)
 }
 
+pub async fn handle_page_lt(
+    State(state): State<Arc<AppState>>,
+    extract::Path(id): extract::Path<String>,
+) -> Result<Html<String>, StatusCode> {
+    let content = PageData {
+        content: "my content".to_string(),
+        id,
+    };
+
+    let some_content = PageContent {
+        content: content.content,
+    };
+
+    let html = state
+        .handlebars
+        .render("page", &json!(some_content))
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Html(html))
+}
+
 pub async fn handle_page(
     State(state): State<Arc<AppState>>,
     extract::Path(id): extract::Path<String>,
@@ -169,6 +190,7 @@ pub async fn actual_main(root: &Path, dev: bool) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(search))
         .route("/page/:id", get(handle_page))
+        .route("/lt/:id", get(handle_page_lt))
         .route("/post/:slug", get(handle_post))
         .nest_service("/assets", ServeDir::new(root.join("assets")));
     //.fallback(handler);
