@@ -28,6 +28,15 @@ enum Commands {
     Post {
         name: String,
     },
+    NewPost {
+        #[arg(short, long)]
+        title: String,
+
+        #[arg(long)]
+        tag: Option<String>,
+
+        slug: String,
+    },
 }
 
 use config::{Config, Environment, File as CF, FileFormat};
@@ -141,6 +150,34 @@ async fn publish() -> anyhow::Result<()> {
                 ],
             )
             .await?;
+        }
+        Commands::NewPost { title, tag, slug } => {
+            let data_path = format!("posts/{}.json", slug);
+            let data_path = root.join(data_path);
+
+            let data_file = File::create(&data_path)?;
+
+            let mut data_writer = BufWriter::new(&data_file);
+
+            serde_json::to_writer_pretty(
+                &mut data_writer,
+                &PostConfig {
+                    title: title.clone(),
+                    tag: tag.clone().unwrap_or("na".to_string()),
+                    timestamp: None,
+                },
+            )?;
+
+            data_writer.flush()?;
+
+            let content_path = format!("posts/{}.md", slug);
+            let content_path = root.join(content_path);
+
+            let content_create = File::create_new(&content_path);
+
+            if let Err(e) = content_create {
+                println!("{}", e);
+            }
         }
     }
 

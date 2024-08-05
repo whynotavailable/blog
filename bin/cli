@@ -1,7 +1,2 @@
-#!/usr/bin/env bash
-
-set -e
-
-#echo $@
-
-RUST_BACKTRACE=1 cargo run --bin whynotblog-cli -- --root ../my-site $@
+# Doing this cause the $@ strips the quotes. Just source this file :(
+alias blog-cli="RUST_BACKTRACE=1 cargo run --bin whynotblog-cli -- --root ../my-site "
