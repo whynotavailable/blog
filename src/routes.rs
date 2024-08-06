@@ -19,7 +19,7 @@ pub async fn handle_page(
     State(state): State<Arc<AppState>>,
     extract::Path(id): extract::Path<String>,
 ) -> AppResult<Html<String>> {
-    let conn = state.db.connect().map_err(AppError::from)?;
+    let conn = state.db.connect()?;
 
     let content: PageData = data::get_one(conn, "SELECT * FROM page WHERE id = ?1", [id])
         .await
@@ -29,10 +29,7 @@ pub async fn handle_page(
         content: content.content,
     };
 
-    let html = state
-        .handlebars
-        .render("page", &json!(some_content))
-        .map_err(AppError::from)?;
+    let html = state.handlebars.render("page", &json!(some_content))?;
 
     Ok(Html(html))
 }
@@ -41,16 +38,13 @@ pub async fn handle_post(
     State(state): State<Arc<AppState>>,
     extract::Path(slug): extract::Path<String>,
 ) -> AppResult<Html<String>> {
-    let conn = state.db.connect().map_err(AppError::from)?;
+    let conn = state.db.connect()?;
 
     let content: PostData = data::get_one(conn, "SELECT * FROM post WHERE slug = ?1", [slug])
         .await
         .map_err(|_| AppError::status(StatusCode::NOT_FOUND))?;
 
-    let html = state
-        .handlebars
-        .render("post", &json!(content))
-        .map_err(AppError::from)?;
+    let html = state.handlebars.render("post", &json!(content))?;
 
     Ok(Html(html))
 }
@@ -59,7 +53,7 @@ pub async fn search(
     State(state): State<Arc<AppState>>,
     search_params: Query<SearchParams>,
 ) -> AppResult<Html<String>> {
-    let conn = state.db.connect().map_err(AppError::from)?;
+    let conn = state.db.connect()?;
 
     let skip: u32 = search_params.page.unwrap_or(0) * 8;
     let posts: Vec<PostSearchResult> = match search_params.tag.clone() {
@@ -77,10 +71,7 @@ pub async fn search(
 
     let content = PostContent { posts };
 
-    let html = state
-        .handlebars
-        .render("search", &json!(content))
-        .map_err(AppError::from)?;
+    let html = state.handlebars.render("search", &json!(content))?;
 
     Ok(Html(html))
 }
