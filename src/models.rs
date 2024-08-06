@@ -52,7 +52,7 @@ pub struct PostConfig {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SearchParams {
     pub tag: Option<String>,
-    pub page: Option<usize>,
+    pub page: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

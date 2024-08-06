@@ -59,16 +59,17 @@ pub async fn search(
 ) -> AppResult<Html<String>> {
     let conn = state.db.connect().map_err(AppError::from)?;
 
+    let skip: u32 = search_params.page.unwrap_or(0) * 8;
     let posts: Vec<PostData> = match search_params.tag.clone() {
         Some(tag) => {
-            let sql = "SELECT * FROM post WHERE tag = ?1 ORDER BY timestamp DESC";
+            let sql = "SELECT * FROM post WHERE tag = ?1 ORDER BY timestamp DESC LIMIT 9 OFFSET ?2";
 
-            data::get_list(conn, sql, libsql::params![tag.as_str()]).await?
+            data::get_list(conn, sql, libsql::params![tag.as_str(), skip]).await?
         }
         None => {
-            let sql = "SELECT * FROM post ORDER BY timestamp DESC";
+            let sql = "SELECT * FROM post ORDER BY timestamp DESC LIMIT 9 OFFSET ?1";
 
-            data::get_list(conn, sql, ()).await?
+            data::get_list(conn, sql, libsql::params![skip]).await?
         }
     };
 
