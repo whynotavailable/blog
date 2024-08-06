@@ -10,7 +10,9 @@ use serde_json::json;
 use crate::{
     data,
     errors::{AppError, AppResult},
-    models::{AppState, PageContent, PageData, PostContent, PostData, SearchParams},
+    models::{
+        AppState, PageContent, PageData, PostContent, PostData, PostSearchResult, SearchParams,
+    },
 };
 
 pub async fn handle_page(
@@ -60,14 +62,14 @@ pub async fn search(
     let conn = state.db.connect().map_err(AppError::from)?;
 
     let skip: u32 = search_params.page.unwrap_or(0) * 8;
-    let posts: Vec<PostData> = match search_params.tag.clone() {
+    let posts: Vec<PostSearchResult> = match search_params.tag.clone() {
         Some(tag) => {
-            let sql = "SELECT * FROM post WHERE tag = ?1 ORDER BY timestamp DESC LIMIT 9 OFFSET ?2";
+            let sql = "SELECT slug, tag, title FROM post WHERE tag = ?1 ORDER BY timestamp DESC LIMIT 9 OFFSET ?2";
 
             data::get_list(conn, sql, libsql::params![tag.as_str(), skip]).await?
         }
         None => {
-            let sql = "SELECT * FROM post ORDER BY timestamp DESC LIMIT 9 OFFSET ?1";
+            let sql = "SELECT slug, tag, title FROM post ORDER BY timestamp DESC LIMIT 9 OFFSET ?1";
 
             data::get_list(conn, sql, libsql::params![skip]).await?
         }

@@ -1,2 +1,2 @@
 # Doing this cause the $@ strips the quotes. Just source this file :(
-alias blog-cli="RUST_BACKTRACE=1 cargo run --bin whynotblog-cli -- --root ../my-site "
+alias blog-cli="RUST_BACKTRACE=1 cargo run --bin whynotblog-cli -- --root ~/content "

@@ -33,7 +33,7 @@ pub struct PageContent {
 
 #[derive(Serialize, Debug)]
 pub struct PostContent {
-    pub posts: Vec<PostData>,
+    pub posts: Vec<PostSearchResult>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -62,4 +62,11 @@ pub struct PostData {
     pub title: String,
     pub tag: String,
     pub content: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PostSearchResult {
+    pub slug: String,
+    pub title: String,
+    pub tag: String,
 }
