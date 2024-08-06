@@ -41,14 +41,11 @@ enum Commands {
 
 use config::{Config, Environment, File as CF, FileFormat};
 use libsql::Builder;
+use whynotblog::errors::AppResult;
 use whynotblog::models::PostConfig;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    publish().await
-}
-
-async fn publish() -> anyhow::Result<()> {
+async fn main() -> AppResult<()> {
     let cli = Cli::parse();
     let root = cli.root.unwrap_or("./".to_string());
     let root = Path::new(root.as_str());

@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use clap::{command, Parser};
+use whynotblog::errors::AppResult;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -16,7 +17,7 @@ struct Cli {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> AppResult<()> {
     let cli = Cli::parse();
     let root = cli.root.unwrap_or("./".to_string());
     let root = Path::new(root.as_str());
