@@ -12,3 +12,5 @@ CREATE TABLE post (
 );
 
 CREATE UNIQUE INDEX idx_post_ts ON post(timestamp DESC);
+
+ALTER TABLE post ADD COLUMN published INTEGER DEFAULT FALSE;

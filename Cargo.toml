@@ -1,6 +1,6 @@
 [package]
 name = "whynotblog"
-version = "0.1.5"
+version = "0.1.6"
 description = "A semi-simple blog system using turso."
 edition = "2021"
 default-run = "whynotblog"
@@ -15,7 +15,7 @@ axum = "0.7.5"
 clap = { version = "4.5.13", features = ["derive"] }
 config = "0.14.0"
 handlebars = { version = "6.0.0", features = ["dir_source"] }
-libsql = "0.4.0"
+libsql = "0.5.0"
 pulldown-cmark = "0.11.0"
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.122"

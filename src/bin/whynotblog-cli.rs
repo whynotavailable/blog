@@ -87,8 +87,8 @@ async fn main() -> AppResult<()> {
         Commands::Post { name } => {
             let sql = r#"
                 INSERT OR REPLACE INTO post
-                (slug, title, timestamp, tag, content) VALUES
-                (?1, ?2, ?3, ?4, ?5)"#;
+                (slug, title, timestamp, tag, content, published) VALUES
+                (?1, ?2, ?3, ?4, ?5, ?6)"#;
 
             let data_path = format!("posts/{}.json", name);
             let data_path = root.join(data_path);
@@ -144,6 +144,7 @@ async fn main() -> AppResult<()> {
                         .expect("Require Timestamp (should never happen)"),
                     data.tag.as_str(),
                     html_output,
+                    data.published.unwrap_or(false)
                 ],
             )
             .await?;
@@ -162,6 +163,7 @@ async fn main() -> AppResult<()> {
                     title: title.clone(),
                     tag: tag.clone().unwrap_or("na".to_string()),
                     timestamp: None,
+                    published: Some(false),
                 },
             )?;
 

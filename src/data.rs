@@ -1,4 +1,3 @@
-use axum::http::StatusCode;
 use libsql::{de, Connection};
 use serde::de::DeserializeOwned;
 
@@ -14,7 +13,7 @@ pub async fn get_one<T: DeserializeOwned>(
         .await?
         .next()
         .await?
-        .ok_or(AppError::status(StatusCode::NOT_FOUND))?;
+        .ok_or(AppError::not_found("Row not found"))?;
 
     de::from_row::<T>(&row).map_err(AppError::from)
 }

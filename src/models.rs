@@ -47,6 +47,7 @@ pub struct PostConfig {
     pub timestamp: Option<u64>,
     pub title: String,
     pub tag: String,
+    pub published: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

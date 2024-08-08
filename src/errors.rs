@@ -21,6 +21,13 @@ impl AppError {
         }
     }
 
+    pub fn not_found(message: &str) -> AppError {
+        AppError {
+            status_code: StatusCode::NOT_FOUND,
+            message: message.to_string(),
+        }
+    }
+
     pub fn from<T: std::error::Error>(e: T) -> AppError {
         AppError {
             status_code: StatusCode::INTERNAL_SERVER_ERROR,
