@@ -100,7 +100,7 @@ async fn main() -> AppResult<()> {
             let mut data: PostConfig =
                 serde_json::from_reader(data_reader).expect("Failed to load data file");
 
-            if data.timestamp.is_none() {
+            if data.published.unwrap_or(false) && data.timestamp.is_none() {
                 let data_file = File::options().write(true).open(&data_path)?;
 
                 data.timestamp = Some(
@@ -140,8 +140,7 @@ async fn main() -> AppResult<()> {
                 libsql::params![
                     name.as_str(),
                     data.title.as_str(),
-                    data.timestamp
-                        .expect("Require Timestamp (should never happen)"),
+                    data.timestamp.unwrap_or(0),
                     data.tag.as_str(),
                     html_output,
                     data.published.unwrap_or(false)
