@@ -23,7 +23,11 @@ struct Cli {
 enum Commands {
     /// Publishes page
     Page {
+        /// The slug for the page, acts as it's id
         name: String,
+
+        #[command(subcommand)]
+        page_commands: PageCommands,
     },
     Post {
         name: String,
@@ -37,6 +41,37 @@ enum Commands {
 
         slug: String,
     },
+}
+
+#[derive(Subcommand)]
+enum PageCommands {
+    /// Create a page or update it's metadata
+    Set {
+        #[arg(short, long)]
+        title: String,
+    },
+    /// Update a page's contents after it's been created
+    Update,
+}
+
+#[derive(Subcommand)]
+enum PostCommands {
+    /// Create a page or update it's metadata
+    Set {
+        /// Set the title, optionally creating the post
+        #[arg(long)]
+        title: Option<String>,
+
+        /// Set the tag, must be done either after the post is created or at the same time
+        #[arg(long)]
+        tag: Option<String>,
+
+        /// Publishes or de-publishes the post.
+        #[arg(long)]
+        published: Option<bool>,
+    },
+    /// Update a page's contents after it's been created
+    Update,
 }
 
 use config::{Config, Environment, File as CF, FileFormat};
@@ -62,27 +97,43 @@ async fn main() -> AppResult<()> {
     let libsql_url = config.get_string("libsql_url")?;
     let libsql_token = config.get_string("libsql_token")?;
 
+    let db = Builder::new_remote(libsql_url, libsql_token)
+        .build()
+        .await?;
+
     match &cli.command {
-        Commands::Page { name } => {
-            let sql = "INSERT OR REPLACE INTO page (id, content) VALUES (?1, ?2);";
+        Commands::Page {
+            name,
+            page_commands,
+        } => {
+            match &page_commands {
+                PageCommands::Set { title } => {
+                    let sql = "INSERT OR REPLACE INTO page (id, title) VALUES (?1, ?2);";
 
-            let path = format!("pages/{}.md", name);
-            let path = root.join(path);
+                    let conn = db.connect().unwrap();
+                    conn.execute(sql, [name, title.as_str()]).await?;
+                }
 
-            let content = fs::read_to_string(path)?;
+                PageCommands::Update => {
+                    let sql = "UPDATE page SET content = ?2 WHERE id = ?1;";
 
-            let parser = pulldown_cmark::Parser::new(content.as_str());
+                    let path = format!("pages/{}.md", name);
+                    let path = root.join(path);
 
-            // Write to a new String buffer.
-            let mut html_output = String::new();
-            pulldown_cmark::html::push_html(&mut html_output, parser);
+                    let content = fs::read_to_string(path)?;
 
-            let db = Builder::new_remote(libsql_url, libsql_token)
-                .build()
-                .await?;
+                    let parser = pulldown_cmark::Parser::new(content.as_str());
 
-            let conn = db.connect().unwrap();
-            conn.execute(sql, [name, html_output.as_str()]).await?;
+                    // Write to a new String buffer.
+                    let mut html_output = String::new();
+                    pulldown_cmark::html::push_html(&mut html_output, parser);
+
+                    let conn = db.connect().unwrap();
+                    conn.execute(sql, [name, html_output.as_str()]).await?;
+                }
+            }
+
+            return Ok(());
         }
         Commands::Post { name } => {
             let sql = r#"
@@ -129,10 +180,6 @@ async fn main() -> AppResult<()> {
             pulldown_cmark::html::push_html(&mut html_output, parser);
 
             let html_output = html_output.as_str();
-
-            let db = Builder::new_remote(libsql_url, libsql_token)
-                .build()
-                .await?;
 
             let conn = db.connect().unwrap();
             conn.execute(
