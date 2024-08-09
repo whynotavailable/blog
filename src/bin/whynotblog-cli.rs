@@ -30,16 +30,11 @@ enum Commands {
         page_commands: PageCommands,
     },
     Post {
+        /// The slug for the post, acts as it's id
         name: String,
-    },
-    NewPost {
-        #[arg(short, long)]
-        title: String,
 
-        #[arg(long)]
-        tag: Option<String>,
-
-        slug: String,
+        #[command(subcommand)]
+        post_commands: PostCommands,
     },
 }
 
@@ -70,14 +65,13 @@ enum PostCommands {
         #[arg(long)]
         published: Option<bool>,
     },
-    /// Update a page's contents after it's been created
+    /// Update a post's contents after it's been created
     Update,
 }
 
 use config::{Config, Environment, File as CF, FileFormat};
 use libsql::Builder;
 use whynotblog::errors::AppResult;
-use whynotblog::models::PostConfig;
 
 #[tokio::main]
 async fn main() -> AppResult<()> {
@@ -108,7 +102,8 @@ async fn main() -> AppResult<()> {
         } => {
             match &page_commands {
                 PageCommands::Set { title } => {
-                    let sql = "INSERT OR REPLACE INTO page (id, title) VALUES (?1, ?2);";
+                    let sql = r#"INSERT INTO page (id, title) VALUES (?1, ?2);
+                    ON CONFLICT(id) DO UPDATE SET title = ?2"#;
 
                     let conn = db.connect().unwrap();
                     conn.execute(sql, [name, title.as_str()]).await?;
@@ -135,93 +130,66 @@ async fn main() -> AppResult<()> {
 
             return Ok(());
         }
-        Commands::Post { name } => {
-            let sql = r#"
-                INSERT OR REPLACE INTO post
-                (slug, title, timestamp, tag, content, published) VALUES
-                (?1, ?2, ?3, ?4, ?5, ?6)"#;
+        Commands::Post {
+            name,
+            post_commands,
+        } => {
+            match &post_commands {
+                PostCommands::Set {
+                    title,
+                    tag,
+                    published,
+                } => {
+                    if let Some(title) = title {
+                        let sql = r#"INSERT INTO post (slug, title) VALUES (?1, ?2)
+                            ON CONFLICT(slug) DO UPDATE SET title = ?2;"#;
 
-            let data_path = format!("posts/{}.json", name);
-            let data_path = root.join(data_path);
+                        let conn = db.connect().unwrap();
+                        conn.execute(sql, [name, title.as_str()]).await?;
+                    }
 
-            let data_file = File::open(&data_path)?;
+                    if let Some(tag) = tag {
+                        let sql = "UPDATE post SET tag = ?2 WHERE slug = ?1;";
 
-            let data_reader = BufReader::new(&data_file);
+                        let conn = db.connect().unwrap();
+                        conn.execute(sql, [name, tag.as_str()]).await?;
+                    }
 
-            let mut data: PostConfig =
-                serde_json::from_reader(data_reader).expect("Failed to load data file");
+                    if let Some(published) = published {
+                        let sql = "UPDATE post SET published = ?2, timestamp = ?3 WHERE slug = ?1;";
 
-            if data.published.unwrap_or(false) && data.timestamp.is_none() {
-                let data_file = File::options().write(true).open(&data_path)?;
+                        let ts = match published {
+                            true => SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs(),
+                            false => 0,
+                        };
 
-                data.timestamp = Some(
-                    SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                );
+                        let conn = db.connect().unwrap();
+                        conn.execute(sql, libsql::params![name.as_str(), published, ts])
+                            .await?;
+                    }
+                }
+                PostCommands::Update => {
+                    let sql = "UPDATE post SET content = ?2 WHERE slug = ?1;";
+                    let content_path = format!("posts/{}.md", name);
+                    let content_path = root.join(content_path);
 
-                let mut data_writer = BufWriter::new(&data_file);
+                    let content = fs::read_to_string(content_path)?;
 
-                serde_json::to_writer_pretty(&mut data_writer, &data)?;
+                    let parser = pulldown_cmark::Parser::new(content.as_str());
 
-                data_writer.flush()?;
-            }
+                    // Write to a new String buffer.
+                    let mut html_output = String::new();
+                    pulldown_cmark::html::push_html(&mut html_output, parser);
 
-            let content_path = format!("posts/{}.md", name);
-            let content_path = root.join(content_path);
+                    let html_output = html_output.as_str();
 
-            let content = fs::read_to_string(content_path)?;
-
-            let parser = pulldown_cmark::Parser::new(content.as_str());
-
-            // Write to a new String buffer.
-            let mut html_output = String::new();
-            pulldown_cmark::html::push_html(&mut html_output, parser);
-
-            let html_output = html_output.as_str();
-
-            let conn = db.connect().unwrap();
-            conn.execute(
-                sql,
-                libsql::params![
-                    name.as_str(),
-                    data.title.as_str(),
-                    data.timestamp.unwrap_or(0),
-                    data.tag.as_str(),
-                    html_output,
-                    data.published.unwrap_or(false)
-                ],
-            )
-            .await?;
-        }
-        Commands::NewPost { title, tag, slug } => {
-            let data_path = format!("posts/{}.json", slug);
-            let data_path = root.join(data_path);
-
-            let data_file = File::create(&data_path)?;
-
-            let mut data_writer = BufWriter::new(&data_file);
-
-            serde_json::to_writer_pretty(
-                &mut data_writer,
-                &PostConfig {
-                    title: title.clone(),
-                    tag: tag.clone().unwrap_or("na".to_string()),
-                    timestamp: None,
-                    published: Some(false),
-                },
-            )?;
-
-            data_writer.flush()?;
-
-            let content_path = format!("posts/{}.md", slug);
-            let content_path = root.join(content_path);
-
-            let content_create = File::create_new(&content_path);
-
-            if let Err(e) = content_create {
-                println!("{}", e);
+                    let conn = db.connect().unwrap();
+                    conn.execute(sql, libsql::params![name.as_str(), html_output])
+                        .await?;
+                }
             }
         }
     }
