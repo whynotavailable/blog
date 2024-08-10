@@ -12,20 +12,6 @@ pub struct AppState {
     pub db: Arc<Database>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct RouteConfig {
-    pub path: String,
-    pub template: String,
-    pub route_type: RouteType,
-    pub page_id: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum RouteType {
-    Page,
-    Post,
-}
-
 #[derive(Serialize, Debug)]
 pub struct PageContent {
     pub title: Option<String>,
@@ -44,14 +30,6 @@ pub struct PageData {
     pub id: String,
     pub title: Option<String>,
     pub content: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct PostConfig {
-    pub timestamp: Option<u64>,
-    pub title: String,
-    pub tag: String,
-    pub published: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
