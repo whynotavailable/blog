@@ -26,6 +26,7 @@ pub async fn handle_page(
         .map_err(|_| AppError::status(StatusCode::NOT_FOUND))?;
 
     let some_content = PageContent {
+        title: content.title,
         content: content.content,
     };
 

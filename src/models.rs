@@ -28,6 +28,7 @@ pub enum RouteType {
 
 #[derive(Serialize, Debug)]
 pub struct PageContent {
+    pub title: Option<String>,
     pub content: String,
 }
 
@@ -39,6 +40,7 @@ pub struct PostContent {
 #[derive(Deserialize, Debug)]
 pub struct PageData {
     pub id: String,
+    pub title: Option<String>,
     pub content: String,
 }
 
