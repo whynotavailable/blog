@@ -35,6 +35,8 @@ pub struct PageContent {
 #[derive(Serialize, Debug)]
 pub struct PostContent {
     pub posts: Vec<PostSearchResult>,
+    pub prev: Option<String>,
+    pub next: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]

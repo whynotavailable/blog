@@ -56,6 +56,9 @@ pub async fn search(
 ) -> AppResult<Html<String>> {
     let conn = state.db.connect()?;
 
+    let mut prev: Option<String> = None;
+    let mut next: Option<String> = None;
+
     let skip: u32 = search_params.page.unwrap_or(0) * 8;
     let posts: Vec<PostSearchResult> = match search_params.tag.clone() {
         Some(tag) => {
@@ -70,7 +73,40 @@ pub async fn search(
         }
     };
 
-    let content = PostContent { posts };
+    match search_params.tag.clone() {
+        Some(tag) => {
+            if search_params.page.is_some() {
+                let page = search_params.page.unwrap_or(0);
+
+                prev = match page {
+                    1 => Some(format!("/?tag={}", tag)),
+                    n if n > 1 => Some(format!("/?tag={}&page={}", tag, page - 1)),
+                    _ => None,
+                };
+
+                if posts.len() == 9 {
+                    next = Some(format!("/?tag={}&page={}", tag, page + 1));
+                }
+            }
+        }
+        None => {
+            if search_params.page.is_some() {
+                let page = search_params.page.unwrap_or(0);
+
+                prev = match page {
+                    1 => Some("/".to_string()),
+                    n if n > 1 => Some(format!("/?page={}", page - 1)),
+                    _ => None,
+                };
+
+                if posts.len() == 9 {
+                    next = Some(format!("/?page={}", page + 1));
+                }
+            }
+        }
+    };
+
+    let content = PostContent { posts, prev, next };
 
     let html = state.handlebars.render("search", &json!(content))?;
 
