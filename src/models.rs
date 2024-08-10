@@ -63,7 +63,7 @@ pub struct SearchParams {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PostData {
     pub slug: String,
-    pub timestamp: usize,
+    pub timestamp: Option<usize>,
     pub title: String,
     pub tag: String,
     pub content: String,
