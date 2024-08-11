@@ -60,14 +60,14 @@ pub async fn search(
     let mut next: Option<String> = None;
 
     let skip: u32 = search_params.page.unwrap_or(0) * 8;
-    let posts: Vec<PostSearchResult> = match search_params.tag.clone() {
+    let mut posts: Vec<PostSearchResult> = match search_params.tag.clone() {
         Some(tag) => {
-            let sql = "SELECT slug, tag, title FROM post WHERE published = TRUE AND tag = ?1 ORDER BY timestamp DESC LIMIT 9 OFFSET ?2";
+            let sql = "SELECT slug, tag, title FROM post WHERE published = TRUE AND tag = ?1 ORDER BY timestamp DESC LIMIT 6 OFFSET ?2";
 
             data::get_list(conn, sql, libsql::params![tag.as_str(), skip]).await?
         }
         None => {
-            let sql = "SELECT slug, tag, title FROM post WHERE published = TRUE ORDER BY timestamp DESC LIMIT 9 OFFSET ?1";
+            let sql = "SELECT slug, tag, title FROM post WHERE published = TRUE ORDER BY timestamp DESC LIMIT 6 OFFSET ?1";
 
             data::get_list(conn, sql, libsql::params![skip]).await?
         }
@@ -105,6 +105,8 @@ pub async fn search(
             }
         }
     };
+
+    posts.truncate(5);
 
     let content = PostContent { posts, prev, next };
 
