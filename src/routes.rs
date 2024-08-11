@@ -59,7 +59,7 @@ pub async fn search(
     let mut prev: Option<String> = None;
     let mut next: Option<String> = None;
 
-    let skip: u32 = search_params.page.unwrap_or(0) * 8;
+    let skip: u32 = search_params.page.unwrap_or(0) * 5;
     let mut posts: Vec<PostSearchResult> = match search_params.tag.clone() {
         Some(tag) => {
             let sql = "SELECT slug, tag, title FROM post WHERE published = TRUE AND tag = ?1 ORDER BY timestamp DESC LIMIT 6 OFFSET ?2";
@@ -75,33 +75,33 @@ pub async fn search(
 
     match search_params.tag.clone() {
         Some(tag) => {
-            if search_params.page.is_some() {
-                let page = search_params.page.unwrap_or(0);
+            let page = search_params.page.unwrap_or(0);
 
+            if search_params.page.is_some() {
                 prev = match page {
                     1 => Some(format!("/?tag={}", tag)),
                     n if n > 1 => Some(format!("/?tag={}&page={}", tag, page - 1)),
                     _ => None,
                 };
+            }
 
-                if posts.len() == 9 {
-                    next = Some(format!("/?tag={}&page={}", tag, page + 1));
-                }
+            if posts.len() == 6 {
+                next = Some(format!("/?tag={}&page={}", tag, page + 1));
             }
         }
         None => {
-            if search_params.page.is_some() {
-                let page = search_params.page.unwrap_or(0);
+            let page = search_params.page.unwrap_or(0);
 
+            if search_params.page.is_some() {
                 prev = match page {
                     1 => Some("/".to_string()),
                     n if n > 1 => Some(format!("/?page={}", page - 1)),
                     _ => None,
                 };
+            }
 
-                if posts.len() == 9 {
-                    next = Some(format!("/?page={}", page + 1));
-                }
+            if posts.len() == 6 {
+                next = Some(format!("/?page={}", page + 1));
             }
         }
     };
