@@ -14,6 +14,9 @@ struct Cli {
     /// Turn on auto-reload for handlebars
     #[arg(short, long)]
     dev: Option<bool>,
+
+    #[arg(long)]
+    replica: Option<String>,
 }
 
 #[tokio::main]
@@ -22,5 +25,5 @@ async fn main() -> AppResult<()> {
     let root = cli.root.unwrap_or("./".to_string());
     let root = Path::new(root.as_str());
 
-    whynotblog::actual_main(root, cli.dev.unwrap_or(false)).await
+    whynotblog::actual_main(root, cli.replica, cli.dev.unwrap_or(false)).await
 }

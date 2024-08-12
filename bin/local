@@ -2,4 +2,4 @@
 
 set -e
 
-RUST_BACKTRACE=1 cargo run -- --dev true --root ../my-site
+RUST_BACKTRACE=1 cargo run -- --dev true --root ../my-site $@

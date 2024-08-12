@@ -1,4 +1,4 @@
-use std::{path::Path, sync::Arc};
+use std::{clone, path::Path, sync::Arc, time::Duration};
 
 use axum::{routing::get, Router};
 use config::{Config, Environment, File, FileFormat};
@@ -14,7 +14,7 @@ pub mod errors;
 pub mod models;
 pub mod routes;
 
-pub async fn actual_main(root: &Path, dev: bool) -> AppResult<()> {
+pub async fn actual_main(root: &Path, replica: Option<String>, dev: bool) -> AppResult<()> {
     let mut handlebars = Handlebars::new();
 
     if dev {
@@ -36,9 +36,20 @@ pub async fn actual_main(root: &Path, dev: bool) -> AppResult<()> {
     let libsql_url = config.get_string("libsql_url")?;
     let libsql_token = config.get_string("libsql_token")?;
 
-    let db = Builder::new_remote(libsql_url, libsql_token)
-        .build()
-        .await?;
+    let db = match replica {
+        Some(replica) => {
+            println!("Using remote replica {}", replica);
+            Builder::new_remote_replica(replica, libsql_url, libsql_token)
+                .sync_interval(Duration::from_secs(300))
+                .build()
+                .await?
+        }
+        None => {
+            Builder::new_remote(libsql_url, libsql_token)
+                .build()
+                .await?
+        }
+    };
 
     let result = handlebars
         .register_templates_directory(root.join("templates"), DirectorySourceOptions::default());
