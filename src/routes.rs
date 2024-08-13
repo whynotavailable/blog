@@ -59,8 +59,10 @@ pub async fn search(
     let mut prev: Option<String> = None;
     let mut next: Option<String> = None;
 
+    let tag = &search_params.tag;
+
     let skip: u32 = search_params.page.unwrap_or(0) * 5;
-    let mut posts: Vec<PostSearchResult> = match search_params.tag.clone() {
+    let mut posts: Vec<PostSearchResult> = match tag {
         Some(tag) => {
             let sql = "SELECT slug, tag, title FROM post WHERE published = TRUE AND tag = ?1 ORDER BY timestamp DESC LIMIT 6 OFFSET ?2";
 
@@ -73,7 +75,7 @@ pub async fn search(
         }
     };
 
-    match search_params.tag.clone() {
+    match tag {
         Some(tag) => {
             let page = search_params.page.unwrap_or(0);
 
