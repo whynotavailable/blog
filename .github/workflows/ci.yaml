@@ -13,4 +13,6 @@ jobs:
           rustup update
           rustup target add aarch64-unknown-linux-gnu
           cargo build --target=aarch64-unknown-linux-gnu --release
-          target/release/whynotblog-cli
+          find . -type f -name "whynotblog-cli"
+          sleep 5
+          find . -type f -name "whynotblog-cli"
