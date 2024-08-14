@@ -4,6 +4,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -17,6 +18,8 @@ struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
+
+// Make two new commands
 
 #[derive(Subcommand)]
 enum Commands {
@@ -45,7 +48,10 @@ enum PageCommands {
         title: String,
     },
     /// Update a page's contents after it's been created
-    Update,
+    Update {
+        /// Markdown file location
+        file: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -65,15 +71,17 @@ enum PostCommands {
         published: Option<bool>,
     },
     /// Update a post's contents after it's been created
-    Update,
+    Update {
+        /// Markdown file location
+        file: Option<String>,
+    },
 }
 
 use config::{Config, Environment, File as CF, FileFormat};
 use libsql::Builder;
-use whynotblog::errors::AppResult;
 
 #[tokio::main]
-async fn main() -> AppResult<()> {
+async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let root = cli.root.unwrap_or("./".to_string());
     let root = Path::new(root.as_str());
@@ -108,11 +116,21 @@ async fn main() -> AppResult<()> {
                     conn.execute(sql, [name, title.as_str()]).await?;
                 }
 
-                PageCommands::Update => {
+                PageCommands::Update { file } => {
                     let sql = "UPDATE page SET content = ?2 WHERE id = ?1;";
 
-                    let path = format!("pages/{}.md", name);
-                    let path = root.join(path);
+                    let default = format!("pages/{}.md", name);
+
+                    let file_name = file.as_deref().unwrap_or(default.as_str());
+
+                    let path = root.join(file_name);
+
+                    if !path.exists() {
+                        return Err(anyhow!(
+                            "Path '{}' does not exist",
+                            path.to_str().unwrap_or_default()
+                        ));
+                    }
 
                     let content = fs::read_to_string(path)?;
 
@@ -170,12 +188,23 @@ async fn main() -> AppResult<()> {
                             .await?;
                     }
                 }
-                PostCommands::Update => {
+                PostCommands::Update { file } => {
                     let sql = "UPDATE post SET content = ?2 WHERE slug = ?1;";
-                    let content_path = format!("posts/{}.md", name);
-                    let content_path = root.join(content_path);
 
-                    let content = fs::read_to_string(content_path)?;
+                    let default = format!("posts/{}.md", name);
+
+                    let file_name = file.as_deref().unwrap_or(default.as_str());
+
+                    let path = root.join(file_name);
+
+                    if !path.exists() {
+                        return Err(anyhow!(
+                            "Path '{}' does not exist",
+                            path.to_str().unwrap_or_default()
+                        ));
+                    }
+
+                    let content = fs::read_to_string(path)?;
 
                     let parser = pulldown_cmark::Parser::new(content.as_str());
 

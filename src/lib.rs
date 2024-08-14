@@ -1,4 +1,4 @@
-use std::{clone, path::Path, sync::Arc, time::Duration};
+use std::{path::Path, sync::Arc, time::Duration};
 
 use axum::{routing::get, Router};
 use config::{Config, Environment, File, FileFormat};
