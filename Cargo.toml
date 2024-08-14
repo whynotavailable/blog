@@ -1,6 +1,6 @@
 [package]
 name = "whynotblog"
-version = "0.0.0"
+version = "1.0.0"
 description = "A semi-simple blog system using turso."
 edition = "2021"
 default-run = "whynotblog"
