@@ -23,9 +23,6 @@ tokio = { version = "1.39.2", features = ["full"] }
 tower = "0.5.0"
 tower-http = { version = "0.5.2", features = ["fs"] }
 
-[target.aarch64-unknown-linux-gnu]
-linker = "aarch64-linux-gnu-gcc"
-
 [[bin]]
 name = "whynotblog"
 

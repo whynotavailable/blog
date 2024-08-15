@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Debug)]
 pub struct RenderData {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AppState {
     pub handlebars: handlebars::Handlebars<'static>,
     pub db: Arc<Database>,
