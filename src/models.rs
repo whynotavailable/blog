@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use libsql::Database;
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +7,7 @@ pub struct RenderData {}
 #[derive(Debug)]
 pub struct AppState {
     pub handlebars: handlebars::Handlebars<'static>,
-    pub db: Arc<Database>,
+    pub db: Database,
 }
 
 #[derive(Serialize, Debug)]

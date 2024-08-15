@@ -56,10 +56,7 @@ pub async fn actual_main(root: &Path, replica: Option<String>, dev: bool) -> App
 
     result.unwrap();
 
-    let state = AppState {
-        handlebars,
-        db: Arc::new(db),
-    };
+    let state = AppState { handlebars, db };
 
     let app = Router::new()
         .route("/", get(routes::search))
