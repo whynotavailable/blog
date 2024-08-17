@@ -25,6 +25,3 @@ tower-http = { version = "0.5.2", features = ["fs"] }
 
 [[bin]]
 name = "whynotblog"
-
-[[bin]]
-name = "whynotblog-cli"
