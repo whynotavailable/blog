@@ -142,6 +142,8 @@ async fn main() -> anyhow::Result<()> {
 
                     let conn = db.connect().unwrap();
                     conn.execute(sql, [name, html_output.as_str()]).await?;
+
+                    println!("Updated page content");
                 }
             }
 
@@ -217,6 +219,8 @@ async fn main() -> anyhow::Result<()> {
                     let conn = db.connect().unwrap();
                     conn.execute(sql, libsql::params![name.as_str(), html_output])
                         .await?;
+
+                    println!("Updated post content");
                 }
             }
         }
