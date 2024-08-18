@@ -11,17 +11,14 @@ exclude = ["sql/*", "bin/*"]
 
 [dependencies]
 anyhow = "1.0.86"
-axum = "0.7.5"
 clap = { version = "4.5.13", features = ["derive"] }
 config = "0.14.0"
-handlebars = { version = "6.0.0", features = ["dir_source"] }
 libsql = "0.5.0"
 pulldown-cmark = "0.11.0"
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.122"
 tokio = { version = "1.39.2", features = ["full"] }
 tower = "0.5.0"
-tower-http = { version = "0.5.2", features = ["fs"] }
 
 [[bin]]
 name = "whynotblog"

@@ -1,28 +1,26 @@
 use libsql::{de, Connection};
 use serde::de::DeserializeOwned;
 
-use crate::errors::{AppError, AppResult};
-
 pub async fn get_one<T: DeserializeOwned>(
     conn: Connection,
     sql: &str,
     params: impl libsql::params::IntoParams,
-) -> AppResult<T> {
+) -> anyhow::Result<T> {
     let row = conn
         .query(sql, params)
         .await?
         .next()
         .await?
-        .ok_or(AppError::not_found("Row not found"))?;
+        .ok_or(anyhow::anyhow!("No clue"))?;
 
-    de::from_row::<T>(&row).map_err(AppError::from)
+    de::from_row::<T>(&row).map_err(|e| anyhow::anyhow!(e))
 }
 
 pub async fn get_list<T: DeserializeOwned>(
     conn: Connection,
     sql: &str,
     params: impl libsql::params::IntoParams,
-) -> AppResult<Vec<T>> {
+) -> anyhow::Result<Vec<T>> {
     let mut iter = conn.query(sql, params).await?;
     let mut ret: Vec<T> = Vec::new();
 
