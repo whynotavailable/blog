@@ -117,7 +117,7 @@ async fn main() -> anyhow::Result<()> {
                 }
 
                 PageCommands::Update { file } => {
-                    let sql = "UPDATE page SET content = ?2 WHERE id = ?1;";
+                    let sql = "UPDATE page SET content = ?2, md = ?3 WHERE id = ?1;";
 
                     let default = format!("pages/{}.md", name);
 
@@ -133,15 +133,17 @@ async fn main() -> anyhow::Result<()> {
                     }
 
                     let content = fs::read_to_string(path)?;
+                    let content = content.as_str();
 
-                    let parser = pulldown_cmark::Parser::new(content.as_str());
+                    let parser = pulldown_cmark::Parser::new(content);
 
                     // Write to a new String buffer.
                     let mut html_output = String::new();
                     pulldown_cmark::html::push_html(&mut html_output, parser);
 
                     let conn = db.connect().unwrap();
-                    conn.execute(sql, [name, html_output.as_str()]).await?;
+                    conn.execute(sql, [name, html_output.as_str(), content])
+                        .await?;
 
                     println!("Updated page content");
                 }
@@ -191,7 +193,7 @@ async fn main() -> anyhow::Result<()> {
                     }
                 }
                 PostCommands::Update { file } => {
-                    let sql = "UPDATE post SET content = ?2 WHERE slug = ?1;";
+                    let sql = "UPDATE post SET content = ?2, md = ?3 WHERE slug = ?1;";
 
                     let default = format!("posts/{}.md", name);
 
@@ -207,8 +209,9 @@ async fn main() -> anyhow::Result<()> {
                     }
 
                     let content = fs::read_to_string(path)?;
+                    let content = content.as_str();
 
-                    let parser = pulldown_cmark::Parser::new(content.as_str());
+                    let parser = pulldown_cmark::Parser::new(content);
 
                     // Write to a new String buffer.
                     let mut html_output = String::new();
@@ -217,7 +220,7 @@ async fn main() -> anyhow::Result<()> {
                     let html_output = html_output.as_str();
 
                     let conn = db.connect().unwrap();
-                    conn.execute(sql, libsql::params![name.as_str(), html_output])
+                    conn.execute(sql, libsql::params![name.as_str(), html_output, content])
                         .await?;
 
                     println!("Updated post content");

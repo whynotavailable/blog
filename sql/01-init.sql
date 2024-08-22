@@ -16,3 +16,6 @@ CREATE INDEX idx_post_tag ON post(tag, timestamp DESC); -- index for tag search
 
 ALTER TABLE post ADD COLUMN published INTEGER DEFAULT FALSE;
 ALTER TABLE page ADD COLUMN title;
+
+ALTER TABLE page ADD COLUMN md;
+ALTER TABLE post ADD COLUMN md;
