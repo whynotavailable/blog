@@ -69,6 +69,10 @@ enum PostCommands {
         /// Publishes or de-publishes the post.
         #[arg(long)]
         published: Option<bool>,
+
+        /// Set's the short description
+        #[arg(short, long)]
+        description: Option<String>,
     },
     /// Update a post's contents after it's been created
     Update {
@@ -160,6 +164,7 @@ async fn main() -> anyhow::Result<()> {
                     title,
                     tag,
                     published,
+                    description,
                 } => {
                     if let Some(title) = title {
                         let sql = r#"INSERT INTO post (slug, title) VALUES (?1, ?2)
@@ -174,6 +179,13 @@ async fn main() -> anyhow::Result<()> {
 
                         let conn = db.connect().unwrap();
                         conn.execute(sql, [name, tag.as_str()]).await?;
+                    }
+
+                    if let Some(desc) = description {
+                        let sql = "UPDATE post SET desc = ?2 WHERE slug = ?1;";
+
+                        let conn = db.connect().unwrap();
+                        conn.execute(sql, [name, desc.as_str()]).await?;
                     }
 
                     if let Some(published) = published {
